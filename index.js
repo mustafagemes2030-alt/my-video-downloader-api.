@@ -25,7 +25,7 @@ app.post('/api/download', async (req, res) => {
             format: 'best'
         });
 
-        const directLink = output.trim().split('\n')[0];
+        const directLink = String(output).trim().split('\n')[0];
 
         return res.json({
             title: "Video Ready",
@@ -47,4 +47,3 @@ app.post('/api/download', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`API running on port ${PORT}`));
-
