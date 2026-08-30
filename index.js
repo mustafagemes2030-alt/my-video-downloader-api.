@@ -3,20 +3,43 @@ const { exec } = require('child_process');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
 
-app.get('/download', (req, res) => {
-    const videoUrl = req.query.url;
-    
+// Ogolaansho buuxa oo CORS ah iyo JSON parser
+app.use(cors());
+app.use(express.json());
+
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.send("API Downloader is active!");
+});
+
+// Endpoint-ka rasmiga ah ee Frontend-ku ka rabay
+app.post('/api/download', (req, res) => {
+    const videoUrl = req.body.url;
+
     if (!videoUrl) {
-        return res.json({ success: false, error: "Fadlan soo sii link-ga muuqaalka!" });
+        return res.status(400).json({ detail: "Fadlan soo gali link-ga muuqaalka!" });
     }
 
+    // Isticmaal yt-dlp
     exec(`yt-dlp -g "${videoUrl}"`, (error, stdout, stderr) => {
         if (error) {
-            return res.json({ success: false, error: error.message });
+            return res.status(500).json({ detail: error.message });
         }
-        res.json({ success: true, download_link: stdout.trim() });
+
+        const directLink = stdout.trim();
+
+        // Frontend-ka wuxuu u baahan yahay qaab dhismeedkan (formats array)
+        res.json({
+            title: "Video Ready",
+            thumbnail: "",
+            formats: [
+                {
+                    url: directLink,
+                    resolution: "HD / Direct Stream"
+                }
+            ]
+        });
     });
 });
 
