@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const ytdlp = require('yt-dlp-exec');
 
 const app = express();
 
@@ -19,28 +18,32 @@ app.post('/api/download', async (req, res) => {
     }
 
     try {
-        const output = await ytdlp(videoUrl, {
-            getUrl: true,
-            noWarnings: true,
-            format: 'best'
-        });
+        // API Toos ah oo bilaash ah (kaas oo taageera Facebook, TikTok, YouTube, Instagram)
+        const response = await fetch(`https://api.vkrdownloader.com/server?url=${encodeURIComponent(videoUrl)}`);
+        const data = await response.json();
 
-        const directLink = String(output).trim().split('\n')[0];
+        // Hubi bal inay jawaabtu leedahay link video
+        if (data && data.data && (data.data.url || data.data.downloads)) {
+            const downloadUrl = data.data.url || data.data.downloads[0].url;
+            
+            return res.json({
+                title: data.data.title || "Video Ready",
+                thumbnail: data.data.thumbnail || "",
+                formats: [
+                    {
+                        url: downloadUrl,
+                        resolution: "HD Stream / Direct Download"
+                    }
+                ]
+            });
+        } else {
+            return res.status(400).json({ detail: "Muuqaalkan waa la soo saari waayay. Hubi link-ga aad gelisay!" });
+        }
 
-        return res.json({
-            title: "Video Ready",
-            thumbnail: "",
-            formats: [
-                {
-                    url: directLink,
-                    resolution: "HD Stream / Direct Download"
-                }
-            ]
-        });
     } catch (error) {
-        console.error("YTDLP Error:", error);
+        console.error("Download Error:", error);
         return res.status(500).json({ 
-            detail: "Muuqaalka waa la soo saari waayay. Hubi link-ga aad gelisay!" 
+            detail: "Error ayaa dhacay marka muuqaalka la soo saarayay." 
         });
     }
 });
